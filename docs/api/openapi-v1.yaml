@@ -1,0 +1,375 @@
+openapi: 3.0.3
+info:
+  title: Hiren Beyond Developer API
+  description: Official public REST API for Hiren Beyond AI-powered recruitment platform.
+  version: 1.0.0
+servers:
+  - url: https://api.hirenbeyond.com/api/v1
+    description: Production API Server
+paths:
+  /jobs:
+    get:
+      summary: List organization jobs
+      description: Retrieve paginated list of job requisitions for the authenticated organization.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [published, draft, closed, archived]
+            default: published
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  request_id:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      summary: Create job requisition
+      description: Create a new job requisition in draft status. Supports Idempotency-Key.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                job_type:
+                  type: string
+                  enum: [full_time, part_time, contract, internship]
+                  default: full_time
+      responses:
+        '201':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Job'
+                  request_id:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /candidates:
+    get:
+      summary: List candidates
+      description: Retrieve candidate profiles who have applied to organization jobs. Private fields sanitized.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Candidate list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Candidate'
+                  request_id:
+                    type: string
+
+  /applications:
+    get:
+      summary: List applications
+      description: Query ATS applications across jobs or for a specific job.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: job_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  request_id:
+                    type: string
+
+  /applications/{id}/stage:
+    post:
+      summary: Update application stage
+      description: Advance or change stage of an existing candidate application.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - target_stage_id
+              properties:
+                target_stage_id:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Stage updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  application_id:
+                    type: string
+                    format: uuid
+                  current_stage_id:
+                    type: string
+                    format: uuid
+                  request_id:
+                    type: string
+
+  /webhooks/subscriptions:
+    post:
+      summary: Subscribe to webhook events
+      description: Register external webhook target URL for platform events.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - target_url
+                - secret
+              properties:
+                target_url:
+                  type: string
+                  format: uri
+                secret:
+                  type: string
+                event_types:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Webhook subscription active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscription_id:
+                    type: string
+                    format: uuid
+                  webhook_id:
+                    type: string
+                    format: uuid
+                  target_url:
+                    type: string
+                  status:
+                    type: string
+                  request_id:
+                    type: string
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key format hb_live_<prefix>_<secret>
+
+  schemas:
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+        job_type:
+          type: string
+        location:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    Candidate:
+      type: object
+      properties:
+        candidate_id:
+          type: string
+          format: uuid
+        headline:
+          type: string
+        years_of_experience:
+          type: number
+        country_code:
+          type: string
+        availability_status:
+          type: string
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        candidate_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        current_stage_id:
+          type: string
+          format: uuid
+        match_score:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        has_more:
+          type: boolean
+        next_cursor:
+          type: string
+          nullable: true
+        limit:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Key lacks required scope or application suspended
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Invalid request parameters or payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Too many requests. Rate limit threshold exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

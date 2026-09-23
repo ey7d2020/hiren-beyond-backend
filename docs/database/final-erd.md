@@ -1,0 +1,26 @@
+# Final ERD
+
+This legacy file now points to the canonical organized ERD set:
+
+- [master-erd.md](./master-erd.md)
+- [erd/01_identity.md](./erd/01_identity.md)
+- [erd/02_candidates.md](./erd/02_candidates.md)
+- [erd/03_jobs.md](./erd/03_jobs.md)
+- [erd/04_applications.md](./erd/04_applications.md)
+- [erd/05_cv_ai.md](./erd/05_cv_ai.md)
+- [erd/06_matching.md](./erd/06_matching.md)
+- [erd/07_recruiter.md](./erd/07_recruiter.md)
+- [erd/08_assessments.md](./erd/08_assessments.md)
+- [erd/09_interviews.md](./erd/09_interviews.md)
+- [erd/10_clients.md](./erd/10_clients.md)
+- [erd/11_notifications.md](./erd/11_notifications.md)
+- [erd/12_ai.md](./erd/12_ai.md)
+- [erd/13_analytics.md](./erd/13_analytics.md)
+- [erd/14_billing.md](./erd/14_billing.md)
+- [erd/15_integrations.md](./erd/15_integrations.md)
+- [erd/16_globalization.md](./erd/16_globalization.md)
+- [erd/17_admin.md](./erd/17_admin.md)
+- [erd/18_search.md](./erd/18_search.md)
+- [erd/19_workflows.md](./erd/19_workflows.md)
+- [erd/20_public_api.md](./erd/20_public_api.md)
+- [erd/21_security.md](./erd/21_security.md)
